@@ -86,6 +86,10 @@ We provide a multistage [Dockerfile](Dockerfile):
     # test it - you should see 404 Not Found
     curl http://127.0.0.1:8000 -v -H "user-agent: foo"
 
+### Patching
+
+To apply a patch to an application or dependency, NGX_RUST_PATCHES environment variable must be setted up, pointing to the directory containing the patches. If file with the name {package-name}-{version}.patch is existed, the patch will be applied to the package's source code during unpacking.
+
 ## Usage
 
 A complete module example using the SDK can be found [here](examples/curl.rs). You can build it with

@@ -402,6 +402,7 @@ fn extract_archive(
                 let stripped_path = path.components().skip(1).collect::<PathBuf>();
                 entry.unpack(&archive_output_dir.join(stripped_path)).unwrap();
             });
+        patch(stem, &archive_output_dir)?;
     } else {
         println!(
             "Archive [{}] already extracted to directory: {}",
@@ -525,6 +526,30 @@ fn nginx_configure_flags(
     }
 
     nginx_opts
+}
+
+/// Applying patch to archive_output_dir environment variable NGX_RUST_PATCHES setted up and patch exists
+fn patch(stem: &str, archive_output_dir: &PathBuf) -> Result<(), Box<dyn StdError>> {
+    let path = match env::var("NGX_RUST_PATCHES") {
+        Ok(path) => path,
+        Err(_) => return Ok(()),
+    };
+
+    let patch_path = format!("{}/{}.patch", path, stem);
+    if !Path::new(&patch_path).exists() {
+        return Ok(());
+    }
+
+    let patch_bin_name = which("patch")?;
+    let flags: Vec<_> = ["-p0", "-i", patch_path.as_str()].iter().map(OsString::from).collect();
+
+    println!("appl{:#?}, flags={:#?}", &patch_bin_name, flags);
+    duct::cmd(patch_bin_name, flags)
+        .dir(archive_output_dir)
+        .stderr_to_stdout()
+        .run()?;
+
+    Ok(())
 }
 
 /// Run external process invoking autoconf `configure` for NGINX.
